@@ -4,18 +4,18 @@
 #include "utils.h"
 
 int main() {
-    const char* str = "HELLO WORLD";
-
-    char* base64_encoded_string = base64_encode(str, strlen(str));
-
-    char* hex_encoded_string = hex_encode(str, strlen(str));
-
-    printf("Original: %s\n", str);
-    printf("Base64: %s\n", base64_encoded_string);
-    printf("Hexadecimal: %s\n", hex_encoded_string);
-
-    free(base64_encoded_string);
-    free(hex_encoded_string);
+    const char *base64_string = "QWNvcmRhUGVkcmluaG9RdWVob2pldGVtY2FtcGVvbmF0bw=="; 
+    // const char* hex_string = "41636f72646150656472696e686f517565686f6a6574656d63616d70656f6e61746f";
     
+    char *hex_string = base64_to_hex(base64_string);
+    // char* base64_string = hex_to_base64(hex_string);
+
+    if (hex_string) {
+        printf("Hexadecimal: %s\n", hex_string);
+        printf("Base64: %s\n", base64_string);
+
+        free(hex_string);
+    }
+
     return 0;
 }
