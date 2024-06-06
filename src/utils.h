@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-void print_message(const char *message);
+char* base64_encode(const char *input, int length);
+
+char* hex_encode(const char *input, int length);
 
 #endif
