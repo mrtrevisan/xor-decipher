@@ -17,11 +17,13 @@ int base64_char_index(char c) {
     return -1;
 }
 
-char* base64_encode(const char *input, int length) {
+char* base64_encode(const char *input) {
     const char base64_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     char *output, *p;
     int i, remainder, enc_len;
+
+    int length = strlen(input);
 
     remainder = length % 3;
     enc_len = (length / 3) * 4 + (remainder ? 4 : 0);
@@ -54,40 +56,34 @@ char* base64_encode(const char *input, int length) {
     return output;
 }
 
+char* base64_decode(const char* input) {
+    int input_length = strlen(input);
+    int output_length = (input_length / 4) * 3;
+    
+    char *output = (char *)malloc(output_length + 1);
+    
+    if (input[input_length - 1] == '=') output_length--;
+    if (input[input_length - 2] == '=') output_length--;
 
-char* base64_decode(const char* input, int length, int* output_length) {
-    char *output, *p;
     int i, j;
+    for (i = 0, j = 0; i < input_length;) {
+        int sextet_a = input[i] == '=' ? 0 & i++ : base64_char_index(input[i++]);
+        int sextet_b = input[i] == '=' ? 0 & i++ : base64_char_index(input[i++]);
+        int sextet_c = input[i] == '=' ? 0 & i++ : base64_char_index(input[i++]);
+        int sextet_d = input[i] == '=' ? 0 & i++ : base64_char_index(input[i++]);
 
-    *output_length = (length / 4) * 3;
+        int triple = (sextet_a << 3 * 6) + (sextet_b << 2 * 6) + (sextet_c << 1 * 6) + (sextet_d << 0 * 6);
 
-    if (input[length - 1] == '=') (*output_length)--;
-    if (input[length - 2] == '=') (*output_length)--;
-
-    output = (char *)malloc(*output_length + 1);
-    if (!output) return NULL;
-
-    p = output;
-
-    for (i = 0; i < length; i += 4) {
-        int sextet_a = (input[i] == '=') ? 0 & i++ : base64_char_index(input[i]);
-        int sextet_b = (input[i + 1] == '=') ? 0 & i++ : base64_char_index(input[i + 1]);
-        int sextet_c = (input[i + 2] == '=') ? 0 & i++ : base64_char_index(input[i + 2]);
-        int sextet_d = (input[i + 3] == '=') ? 0 & i++ : base64_char_index(input[i + 3]);
-
-        int triple = (sextet_a << 18) + (sextet_b << 12) + (sextet_c << 6) + (sextet_d);
-
-        for (j = 0; j < 3; j++) {
-            if (p < output + *output_length) *p++ = (triple >> (8 * (2 - j))) & 0xFF;
-        }
+        if (j < output_length) output[j++] = (triple >> 2 * 8) & 0xFF;
+        if (j < output_length) output[j++] = (triple >> 1 * 8) & 0xFF;
+        if (j < output_length) output[j++] = (triple >> 0 * 8) & 0xFF;
     }
-
-    *p = '\0';
-
+    output[output_length] = '\0';
     return output;
 }
 
-char* hex_encode(const char *input, int length) {
+char* hex_encode(const char *input) {
+    int length = strlen(input);
     char *output, *p;
     int i;
 
@@ -105,15 +101,17 @@ char* hex_encode(const char *input, int length) {
     return output;
 }
 
-char* hex_decode(const char* input, int length, int* output_length) {
+char* hex_decode(const char* input) {
+    int length = strlen(input);
+
     if (length % 2 != 0) {
         printf("Erro: A entrada hex deve ter um número par de caracteres.\n");
         return NULL;
     }
 
-    *output_length = length / 2;
+    int output_length = length / 2;
 
-    char *output = (char *)malloc(*output_length);
+    char *output = (char *)malloc(output_length);
     if (!output) return NULL;
 
     for (int i = 0; i < length; i += 2) {
@@ -124,31 +122,106 @@ char* hex_decode(const char* input, int length, int* output_length) {
 }
 
 char* base64_to_hex(const char *base64_string) {
-    int decoded_length;
-    char *decoded_bytes = base64_decode(base64_string, strlen(base64_string), &decoded_length);
+    char* decoded_bytes = base64_decode(base64_string);
 
     if (!decoded_bytes) {
         printf("Erro ao decodificar a string Base64.\n");
         return NULL;
     }
 
-    char *hex_string = hex_encode(decoded_bytes, decoded_length);
+    printf("Decoded: %s\n", decoded_bytes);
+
+    char *hex_string = hex_encode(decoded_bytes);
 
     free(decoded_bytes);
     return hex_string;
 }
 
 char* hex_to_base64(const char *hex_string) {
-    int decoded_length;
-    char *decoded_bytes = hex_decode(hex_string, strlen(hex_string), &decoded_length);
+    char* decoded_bytes = hex_decode(hex_string);
 
     if (!decoded_bytes) {
         printf("Erro ao decodificar a string Base64.\n");
         return NULL;
     }
 
-    char *base64_string = base64_encode(decoded_bytes, decoded_length);
+    printf("Decoded: %s\n", decoded_bytes);
+
+    char *base64_string = base64_encode(decoded_bytes);
 
     free(decoded_bytes);
     return base64_string;
+}
+
+char* xor_bit_a_bit(const char* str, const char* key) {
+    size_t len_str = strlen(str);
+    size_t len_key = strlen(key);
+
+    if (len_str != len_key)
+    {
+        printf("Erro! Entrada e Chave de tamanhos diferentes.");
+        return NULL;
+    }
+
+    char* result = malloc(sizeof(char) * len_str +1);
+
+    char* hex_str = hex_encode(str);
+    char* hex_key = hex_encode(key);
+
+    for (size_t i = 0; i < strlen(hex_str); i++)
+    {
+        result[i] = (hex_str[i] ^ hex_key[i]);
+        printf("%x XOR %x = %c\n", hex_str[i], hex_key[i], result[i]);
+    }
+
+    result[len_str] = '\0';
+
+    char* final_result = hex_decode(result);
+
+    return final_result;
+}
+
+// Função para converter uma string hexadecimal para um array de bytes
+void hexStringToByteArray(const char *hexString, unsigned char *byteArray) {
+    size_t len = strlen(hexString);
+    for (size_t i = 0; i < len; i += 2) {
+        sscanf(hexString + i, "%2hhx", &byteArray[i / 2]);
+    }
+}
+
+// Função para converter um array de bytes para uma string hexadecimal
+void byteArrayToHexString(const unsigned char *byteArray, size_t len, char *hexString) {
+    for (size_t i = 0; i < len; i++) {
+        sprintf(hexString + (i * 2), "%02X", byteArray[i]);
+    }
+}
+
+// Função para aplicar XOR em duas strings hexadecimais de mesmo tamanho
+void xorHexStrings(const char *plainText, const char *key, char *cypherText) {
+    size_t len = strlen(plainText) / 2;
+    unsigned char *plainTextBytes = (unsigned char *)malloc(len);
+    unsigned char *keyBytes = (unsigned char *)malloc(len);
+    unsigned char *cypherTextBytes = (unsigned char *)malloc(len);
+
+    if (plainTextBytes == NULL || keyBytes == NULL || cypherTextBytes == NULL) {
+        fprintf(stderr, "Falha na alocação de memória\n");
+        return;
+    }
+
+    // Converte as strings hexadecimais para arrays de bytes
+    hexStringToByteArray(plainText, plainTextBytes);
+    hexStringToByteArray(key, keyBytes);
+
+    // Aplica XOR byte a byte
+    for (size_t i = 0; i < len; i++) {
+        cypherTextBytes[i] = plainTextBytes[i] ^ keyBytes[i];
+    }
+
+    // Converte o resultado de volta para uma string hexadecimal
+    byteArrayToHexString(cypherTextBytes, len, cypherText);
+
+    // Libera a memória alocada
+    free(plainTextBytes);
+    free(keyBytes);
+    free(cypherTextBytes);
 }
