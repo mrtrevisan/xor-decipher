@@ -83,41 +83,36 @@ char* base64_decode(const char* input) {
 }
 
 char* hex_encode(const char *input) {
-    int length = strlen(input);
-    char *output, *p;
-    int i;
-
-    output = (char *)malloc(length * 2 + 1);
+    size_t length = strlen(input);
+    char *output = (char *)malloc(length * 2 + 1);  // Espaço para string hexadecimal + '\0'
     if (!output) return NULL;
 
-    p = output;
-
-    for (i = 0; i < length; ++i) {
-        sprintf(p, "%02x", input[i]);
-        p += 2;
+    for (size_t i = 0; i < length; i++) {
+        sprintf(output + (i * 2), "%02x", (unsigned char)input[i]);
     }
-
-    *p = '\0';
+    
     return output;
 }
 
 char* hex_decode(const char* input) {
     int length = strlen(input);
+    int output_length = (length + 1) / 2;  // Espaço para os bytes decodificados
 
-    if (length % 2 != 0) {
-        printf("Erro: A entrada hex deve ter um número par de caracteres.\n");
-        return NULL;
-    }
-
-    int output_length = length / 2;
-
-    char *output = (char *)malloc(output_length);
+    char *output = (char *)malloc(output_length + 1);  // Espaço para os bytes decodificados + '\0'
     if (!output) return NULL;
 
-    for (int i = 0; i < length; i += 2) {
+    int i;
+    for (i = 0; i < length - 1; i += 2) {
         sscanf(input + i, "%2hhx", &output[i / 2]);
     }
 
+    // Se o comprimento for ímpar, trate o último caractere hexadecimal sozinho
+    if (length % 2 != 0) {
+        sscanf(input + i, "%1hhx", &output[i / 2]);
+    }
+
+    output[output_length] = '\0';  // Adiciona o terminador nulo
+    
     return output;
 }
 
@@ -153,64 +148,16 @@ char* hex_to_base64(const char *hex_string) {
     return base64_string;
 }
 
-char* xor_bit_a_bit(const char* str, const char* key) {
-    size_t len_str = strlen(str);
-    size_t len_key = strlen(key);
-
-    if (len_str != len_key)
-    {
-        printf("Erro! Entrada e Chave de tamanhos diferentes.");
-        return NULL;
-    }
-
-    char* result = malloc(sizeof(char) * len_str +1);
-
-    char* hex_str = hex_encode(str);
-    char* hex_key = hex_encode(key);
-
-    for (size_t i = 0; i < strlen(hex_str); i++)
-    {
-        result[i] = (hex_str[i] ^ hex_key[i]);
-        printf("%x XOR %x = %c\n", hex_str[i], hex_key[i], result[i]);
-    }
-
-    result[len_str] = '\0';
-
-    char* final_result = hex_decode(result);
-
-    return final_result;
-}
-
-// Função para converter uma string hexadecimal para um array de bytes
-void hexStringToByteArray(const char *hexString, unsigned char *byteArray) {
-    size_t len = strlen(hexString);
-    for (size_t i = 0; i < len; i += 2) {
-        sscanf(hexString + i, "%2hhx", &byteArray[i / 2]);
-    }
-}
-
-// Função para converter um array de bytes para uma string hexadecimal
-void byteArrayToHexString(const unsigned char *byteArray, size_t len, char *hexString) {
-    for (size_t i = 0; i < len; i++) {
-        sprintf(hexString + (i * 2), "%02X", byteArray[i]);
-    }
-}
-
 // Função para aplicar XOR em duas strings hexadecimais de mesmo tamanho
-void xorHexStrings(const char *plainText, const char *key, char *cypherText) {
+char* xorHexStrings(const char *plainText, const char *key) {
     size_t len = strlen(plainText) / 2;
-    unsigned char *plainTextBytes = (unsigned char *)malloc(len);
-    unsigned char *keyBytes = (unsigned char *)malloc(len);
-    unsigned char *cypherTextBytes = (unsigned char *)malloc(len);
-
-    if (plainTextBytes == NULL || keyBytes == NULL || cypherTextBytes == NULL) {
-        fprintf(stderr, "Falha na alocação de memória\n");
-        return;
-    }
+    char *plainTextBytes;
+    char *keyBytes;
+    char *cypherTextBytes = (char *)malloc(len);
 
     // Converte as strings hexadecimais para arrays de bytes
-    hexStringToByteArray(plainText, plainTextBytes);
-    hexStringToByteArray(key, keyBytes);
+    plainTextBytes = hex_decode(plainText);
+    keyBytes = hex_decode(key);
 
     // Aplica XOR byte a byte
     for (size_t i = 0; i < len; i++) {
@@ -218,10 +165,12 @@ void xorHexStrings(const char *plainText, const char *key, char *cypherText) {
     }
 
     // Converte o resultado de volta para uma string hexadecimal
-    byteArrayToHexString(cypherTextBytes, len, cypherText);
+    char *cypherText = hex_encode(cypherTextBytes);
 
     // Libera a memória alocada
     free(plainTextBytes);
     free(keyBytes);
     free(cypherTextBytes);
+
+    return cypherText;
 }
