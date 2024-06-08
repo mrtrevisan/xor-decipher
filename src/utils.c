@@ -140,8 +140,6 @@ char* hex_to_base64(const char *hex_string) {
         return NULL;
     }
 
-    printf("Decoded: %s\n", decoded_bytes);
-
     char *base64_string = base64_encode(decoded_bytes);
 
     free(decoded_bytes);
@@ -153,7 +151,7 @@ char* xorHexStrings(const char *plainText, const char *key) {
     size_t len = strlen(plainText) / 2;
     char *plainTextBytes;
     char *keyBytes;
-    char *cypherTextBytes = (char *)malloc(len);
+    char *cypherTextBytes = (char *)malloc(len * sizeof(char) + 1);
 
     // Converte as strings hexadecimais para arrays de bytes
     plainTextBytes = hex_decode(plainText);
@@ -163,6 +161,8 @@ char* xorHexStrings(const char *plainText, const char *key) {
     for (size_t i = 0; i < len; i++) {
         cypherTextBytes[i] = plainTextBytes[i] ^ keyBytes[i];
     }
+
+    cypherTextBytes[len] = '\0';
 
     // Converte o resultado de volta para uma string hexadecimal
     char *cypherText = hex_encode(cypherTextBytes);

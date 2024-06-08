@@ -72,7 +72,7 @@ void decipher(char* cipherText) {
     
     char** keys = createKeys(len);
 
-    char* bestRawText = NULL;
+    char* bestRawText = (char*)malloc(len * sizeof(char) + 1);
     char bestKey = 'a';
     int bestCount = -1;
 
@@ -86,18 +86,19 @@ void decipher(char* cipherText) {
 
             if (count > bestCount) {
                 bestCount = count;
-                bestRawText = rawText;
+                strcpy(bestRawText, rawText);
                 bestKey = keys[i][0];
             }
-            else {
-                free(rawText);
-            }
 
+            free(rawText);
             free(res);
-            free(keys[i]);
+            free(key);
         }
     }
 
+    for(int i = 0; i < 26; i++){
+        free(keys[i]);
+    }
     free(keys);
 
     if (bestRawText) {
@@ -110,22 +111,18 @@ void decipher(char* cipherText) {
 
 
 int main() {
-    //char* str = "41636f72646150656472696e686f517565686f6a6574656d63616d70656f6e61746f";
-    //char* key = "0b021e0701003e0a0d060c0807063d1a0b0f0e060a1a020c0f0e03170403010f130e";
-    //char* res = xorHexStrings(str, key);
-    //4a61717565616e6f697465666f696c6f6e67616c6f6e67616c6f6e67616c6f6e6761
-    //4A61717565616E6F697465666F696C6F6E67616C6F6E67616C6F6E67616C6F6E6761
+    string_convert(1);
 
-    // 3)CipherText: 072c232c223d2c3e3e2c2328232538202e2c3f3f223d223f2c3c3824072c232c223d2c3e3e2c2328232538202b24212028232c191b1b222e283c382828233f22212c2238393f222e242a2c3f3f223d223f2c2408232c22292c2f22212c3d3f223c38283b2c242c2e222339282e283f002c243e38203d22382e2228202c243e38203e282e38212239283f2024232c002c3e38202122382e223d222928393f222e22232c283e3c3824232c19382922243e3e22272c2b2c373d2c3f3928292c3f223924232c082c3f223924232c272c2b2c373d2c3f392829283b222e281c3828392820242928242c3e392c22202229283f232c3e082220283e202225222028203c38283b243b242c232c3e2e2c3b283f232c3e
+    string_convert(2);
+    char* str = "41636f72646150656472696e686f517565686f6a6574656d63616d70656f6e61746f";
+    char* key = "0b021e0701003e0a0d060c0807063d1a0b0f0e060a1a020c0f0e03170403010f130e";
+    char* res = xorHexStrings(str, key);
 
-    // if (res) {
-    //     printf("Ciphertext: %s", res);
-    //     printf("\n");
-    // }
-
-    //string_convert(1);
-
-    //string_convert(2);
+    if (res) {
+        printf("Ciphertext: %s", res);
+        free(res);
+        printf("\n");
+    }
 
     char *cipherText = "072c232c223d2c3e3e2c2328232538202e2c3f3f223d223f2c3c3824072c232c223d2c3e3e2c2328232538202b24212028232c191b1b222e283c382828233f22212c2238393f222e242a2c3f3f223d223f2c2408232c22292c2f22212c3d3f223c38283b2c242c2e222339282e283f002c243e38203d22382e2228202c243e38203e282e38212239283f2024232c002c3e38202122382e223d222928393f222e22232c283e3c3824232c19382922243e3e22272c2b2c373d2c3f3928292c3f223924232c082c3f223924232c272c2b2c373d2c3f392829283b222e281c3828392820242928242c3e392c22202229283f232c3e082220283e202225222028203c38283b243b242c232c3e2e2c3b283f232c3e";
     decipher(cipherText);
